@@ -861,6 +861,8 @@ class Predictor(object):
         n_jobs = -1
         if os.environ.get('is_test_suite', 0) == 'True':
             n_jobs = 1
+        elif model_name[:4] == 'LGBM':
+            n_jobs = 2
 
         gs = GridSearchCV(
             # Fit on the pipeline.
