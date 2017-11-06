@@ -607,6 +607,8 @@ class Predictor(object):
 
         self.set_params_and_defaults(raw_training_data, user_input_func=user_input_func, optimize_final_model=optimize_final_model, write_gs_param_results_to_file=write_gs_param_results_to_file, perform_feature_selection=perform_feature_selection, verbose=verbose, X_test=X_test, y_test=y_test, ml_for_analytics=ml_for_analytics, take_log_of_y=take_log_of_y, model_names=model_names, perform_feature_scaling=perform_feature_scaling, calibrate_final_model=calibrate_final_model, _scorer=_scorer, scoring=scoring, verify_features=verify_features, training_params=training_params, grid_search_params=grid_search_params, compare_all_models=compare_all_models, cv=cv, feature_learning=feature_learning, fl_data=fl_data, optimize_feature_learning=False, train_uncertainty_model=train_uncertainty_model, uncertainty_data=uncertainty_data, uncertainty_delta=uncertainty_delta, uncertainty_delta_units=uncertainty_delta_units, calibrate_uncertainty=calibrate_uncertainty, uncertainty_calibration_settings=uncertainty_calibration_settings, uncertainty_calibration_data=uncertainty_calibration_data, uncertainty_delta_direction=uncertainty_delta_direction, prediction_intervals=prediction_intervals, predict_intervals=predict_intervals, ensemble_config=ensemble_config, trained_transformation_pipeline=trained_transformation_pipeline, transformed_X=transformed_X, transformed_y=transformed_y, return_transformation_pipeline=return_transformation_pipeline, X_test_already_transformed=X_test_already_transformed)
 
+        X_df = None
+
         if verbose:
             print('Welcome to auto_ml! We\'re about to go through and make sense of your data using machine learning, and give you a production-ready pipeline to get predictions with.\n')
             print('If you have any issues, or new feature ideas, let us know at https://github.com/ClimbsRocks/auto_ml')
@@ -650,13 +652,11 @@ class Predictor(object):
 
         if self.calculate_prediction_intervals is True:
             # TODO: parallelize these!
-            lower_interval_predictor = self.train_ml_estimator(['GradientBoostingRegressor'], self._scorer, X_df, y, prediction_interval=self.prediction_intervals[0])
-
-            median_interval_predictor = self.train_ml_estimator(['GradientBoostingRegressor'], self._scorer, X_df, y, prediction_interval=0.5)
-
-            upper_interval_predictor = self.train_ml_estimator(['GradientBoostingRegressor'], self._scorer, X_df, y, prediction_interval=self.prediction_intervals[1])
-
-            interval_predictors = [lower_interval_predictor, median_interval_predictor, upper_interval_predictor]
+            interval_predictors = []
+            for prediction_interval in prediction_intervals:
+                interval_predictors.append(self.train_ml_estimator(['GradientBoostingRegressor'], self._scorer, X_df, y, prediction_interval=prediction_interval))
+            # interval_predictors = list(map(lambda quantile: self.train_ml_estimator(['GradientBoostingRegressor'], self._scorer, self.X_df, self.y, prediction_interval=quantile), self.prediction_intervals))
+            print("interval_predictors is: {}".format(interval_predictors))
             self.trained_final_model.interval_predictors = interval_predictors
 
 
@@ -1902,5 +1902,3 @@ class Predictor(object):
 
         # ensembler will be added to pipeline later back inside main train section
         self.trained_final_model = ensembler
-
-

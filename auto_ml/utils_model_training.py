@@ -500,9 +500,7 @@ class FinalModelATC(BaseEstimator, TransformerMixin):
             raise ValueError('This model was not trained to predict intervals')
 
         base_prediction = self.predict(X)
-        lower_prediction = self.interval_predictors[0].predict(X)
-        median_prediction = self.interval_predictors[1].predict(X)
-        upper_prediction = self.interval_predictors[2].predict(X)
+        predictions = list(map(lambda predictor: predictor.predict(X), self.interval_predictors))
 
         if scipy.sparse.issparse(X):
             len_input = X.shape[0]
@@ -511,14 +509,11 @@ class FinalModelATC(BaseEstimator, TransformerMixin):
 
         if len_input == 1:
             if return_type is None or return_type == 'dict':
-                return {
-                    'prediction': base_prediction
-                    , 'prediction_lower': lower_prediction
-                    , 'prediction_median': median_prediction
-                    , 'prediction_upper': upper_prediction
-                }
+                base_dict = {'prediction': base_prediction}
+                map(lambda (i, val): base_dict.update({'prediction_{}'.format(i): val}), enumerate(predictions))
+                return base_dict
             else:
-                return [base_prediction, lower_prediction, median_prediction, upper_prediction]
+                return [base_prediction] + predictions
         else:
             if return_type is None or return_type == 'list':
                 # kinda tough...
@@ -526,21 +521,15 @@ class FinalModelATC(BaseEstimator, TransformerMixin):
                 for idx in range(len(base_prediction)):
                     row_result = []
                     row_result.append(base_prediction[idx])
-                    row_result.append(lower_prediction[idx])
-                    row_result.append(median_prediction[idx])
-                    row_result.append(upper_prediction[idx])
+                    map(lambda prediction: row_result.append(prediction[idx]), predictions)
                     results.append(row_result)
 
                 return results
 
             elif return_type == 'df':
-                dict_for_df = {
-                    'prediction': base_prediction
-                    , 'prediction_lower': lower_prediction
-                    , 'prediction_median': median_prediction
-                    , 'prediction_upper': upper_prediction
-                }
-                df = pd.DataFrame(dict_for_df)
+                base_dict = {'prediction': base_prediction}
+                map(lambda (i, val): base_dict.update({'prediction_{}'.format(i): val}), enumerate(predictions))
+                df = pd.DataFrame(base_dict)
                 return df
 
 
@@ -646,9 +635,3 @@ class FinalModelATC(BaseEstimator, TransformerMixin):
         else:
             X_fit, X_test, y, y_test = train_test_split(X_fit, y, test_size=0.15)
             return X_fit, y, X_test, y_test
-
-
-
-
-
-
