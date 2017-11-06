@@ -653,7 +653,7 @@ class Predictor(object):
         if self.calculate_prediction_intervals is True:
             # TODO: parallelize these!
             interval_predictors = []
-            for prediction_interval in prediction_intervals:
+            for prediction_interval in self.prediction_intervals:
                 interval_predictors.append(self.train_ml_estimator(['GradientBoostingRegressor'], self._scorer, X_df, y, prediction_interval=prediction_interval))
             # interval_predictors = list(map(lambda quantile: self.train_ml_estimator(['GradientBoostingRegressor'], self._scorer, self.X_df, self.y, prediction_interval=quantile), self.prediction_intervals))
             print("interval_predictors is: {}".format(interval_predictors))
