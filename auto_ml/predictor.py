@@ -195,7 +195,7 @@ class Predictor(object):
 
             if prediction_interval is not False:
                 params = {}
-                params['loss'] = 'quantile'
+                params['loss'] = 'tile'
                 params['alpha'] = prediction_interval
                 training_prediction_intervals = True
 
@@ -650,13 +650,7 @@ class Predictor(object):
 
         if self.calculate_prediction_intervals is True:
             # TODO: parallelize these!
-            lower_interval_predictor = self.train_ml_estimator(['GradientBoostingRegressor'], self._scorer, X_df, y, prediction_interval=self.prediction_intervals[0])
-
-            median_interval_predictor = self.train_ml_estimator(['GradientBoostingRegressor'], self._scorer, X_df, y, prediction_interval=0.5)
-
-            upper_interval_predictor = self.train_ml_estimator(['GradientBoostingRegressor'], self._scorer, X_df, y, prediction_interval=self.prediction_intervals[1])
-
-            interval_predictors = [lower_interval_predictor, median_interval_predictor, upper_interval_predictor]
+            interval_predictors = list(map(lambda quantile: self.train_ml_estimator(['GradientBoostingRegressor'], self._scorer, X_df, y, prediction_interval=self.prediction_intervals)))
             self.trained_final_model.interval_predictors = interval_predictors
 
 
@@ -1902,5 +1896,3 @@ class Predictor(object):
 
         # ensembler will be added to pipeline later back inside main train section
         self.trained_final_model = ensembler
-
-
